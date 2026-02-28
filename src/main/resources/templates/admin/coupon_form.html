@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coupon Form - StepUp Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+
+<body>
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <main class="main-content">
+        <div
+            th:replace="~{admin/fragments :: header(pageTitle=${coupon.id == null ? 'Create Coupon' : 'Edit Coupon'})}">
+        </div>
+
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <div class="admin-table-card shadow-sm p-5">
+                    <form th:action="@{/admin/coupon/save}" th:object="${coupon}" method="post">
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Coupon Code</label>
+                            <input type="text" th:field="*{code}" class="form-control rounded-4 py-3 text-uppercase"
+                                placeholder="E.G. STEPUP50" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Discount Percentage (%)</label>
+                            <input type="number" th:field="*{discountPercentage}" class="form-control rounded-4 py-3"
+                                min="1" max="100" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Expiry Date</label>
+                            <input type="date" th:field="*{expiryDate}" class="form-control rounded-4 py-3" required>
+                        </div>
+
+                        <div class="mb-4 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" th:field="*{active}" id="activeSwitch">
+                            <label class="form-check-label fw-bold" for="activeSwitch">Is Active?</label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-3 rounded-pill fw-bold">Save Coupon</button>
+                            <a th:href="@{/admin/coupons}" class="btn btn-light py-3 rounded-pill fw-bold">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

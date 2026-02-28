@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Coupons - StepUp Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+
+<body>
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <main class="main-content">
+        <div th:replace="~{admin/fragments :: header(pageTitle='Coupon Management')}"></div>
+        <div class="d-flex justify-content-end mb-4">
+            <a th:href="@{/admin/coupon/new}" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i> Create New Coupon
+            </a>
+        </div>
+        <div class="admin-table-card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount (%)</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="coupon : ${coupons}">
+                            <td class="fw-bold text-uppercase" th:text="${coupon.code}">CODE</td>
+                            <td th:text="${coupon.discountPercentage} + '%'">0%</td>
+                            <td th:text="${coupon.expiryDate}">Date</td>
+                            <td>
+                                <span class="badge rounded-pill"
+                                    th:classappend="${coupon.active ? 'bg-success' : 'bg-danger'}"
+                                    th:text="${coupon.active ? 'Active' : 'Expired/Paused'}">Active</span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a th:href="@{/admin/coupon/edit/{id}(id=${coupon.id})}"
+                                        class="btn btn-sm btn-outline-warning rounded-pill"><i
+                                            class="bi bi-pencil"></i></a>
+                                    <a th:href="@{/admin/coupon/delete/{id}(id=${coupon.id})}"
+                                        class="btn btn-sm btn-outline-danger rounded-pill"
+                                        onclick="return confirm('Delete this coupon?')"><i class="bi bi-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

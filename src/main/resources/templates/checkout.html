@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>StepUp.in - Checkout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+
+<body>
+    <div th:replace="~{fragments :: header}"></div>
+
+    <div class="container mt-5">
+        <h2 class="text-center mb-5" style="font-family:'Playfair Display'">Checkout</h2>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card p-4 shadow-sm border-0">
+                    <h4 class="mb-3">Shipping Details</h4>
+
+                    <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                        <span th:text="${param.error}"></span>
+                        <span th:if="${#strings.isEmpty(param.error)}">Something went wrong. Please check your
+                            details.</span>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger" role="alert">
+                        <span th:text="${error}"></span>
+                    </div>
+
+                    <form id="checkoutForm" th:action="@{/place-order}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="fullName" id="fullName" class="form-control"
+                                th:value="${user.name}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" id="emailField" class="form-control"
+                                th:value="${user.email}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Shipping Address</label>
+                            <textarea name="address" id="addressField" class="form-control" rows="4"
+                                placeholder="Enter your full address" required th:text="${user.address}"></textarea>
+                            <div id="addressError" class="text-danger small mt-1" style="display:none;">Shipping Address
+                                is required.</div>
+                        </div>
+
+                        <h4 class="mb-3 mt-4">Payment Method</h4>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD"
+                                checked>
+                            <label class="form-check-label" for="cod">
+                                Cash on Delivery
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="online"
+                                value="ONLINE">
+                            <label class="form-check-label" for="online">
+                                Pay Online (Razorpay)
+                            </label>
+                        </div>
+
+                        <button type="button" onclick="handlePayment()" class="btn btn-dark w-100 mt-4 py-2">Place
+                            Order</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card p-4 shadow-sm border-0 bg-light">
+                    <h4 class="mb-3">Order Summary</h4>
+                    <div th:each="item : ${cart.items}" class="d-flex justify-content-between mb-2">
+                        <span th:text="${item.product.name} + ' x ' + ${item.quantity}">Product</span>
+                        <span th:text="'₹ ' + ${item.subtotal}">₹ 1000</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total</strong>
+                        <strong th:text="'₹ ' + ${cart.totalAmount}" id="totalAmount"
+                            th:attr="data-amount=${cart.totalAmount}">₹ 0.00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        function handlePayment() {
+            var form = document.getElementById('checkoutForm');
+            var paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            var amount = document.getElementById('totalAmount').getAttribute('data-amount');
+
+            // Validate Full Name
+            var fullName = document.getElementById('fullName').value.trim();
+            if (!fullName) {
+                document.getElementById('fullName').classList.add('is-invalid');
+                document.getElementById('fullName').focus();
+                return;
+            } else {
+                document.getElementById('fullName').classList.remove('is-invalid');
+            }
+
+            // Validate Email
+            var email = document.getElementById('emailField').value.trim();
+            if (!email) {
+                document.getElementById('emailField').classList.add('is-invalid');
+                document.getElementById('emailField').focus();
+                return;
+            } else {
+                document.getElementById('emailField').classList.remove('is-invalid');
+            }
+
+            // Validate Shipping Address (BUG-005)
+            var address = document.getElementById('addressField').value.trim();
+            if (!address) {
+                document.getElementById('addressField').classList.add('is-invalid');
+                document.getElementById('addressError').style.display = 'block';
+                document.getElementById('addressField').focus();
+                return;
+            } else {
+                document.getElementById('addressField').classList.remove('is-invalid');
+                document.getElementById('addressError').style.display = 'none';
+            }
+
+            if (paymentMethod === 'ONLINE') {
+                // Call server to create order
+                fetch('/create-order?amount=' + amount, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        var options = {
+                            "key": "[[${razorpayKeyId}]]", // Enter the Key ID generated from the Dashboard
+                            "amount": amount * 100,
+                            "currency": "INR",
+                            "name": "StepUp",
+                            "description": "Purchase",
+                            "order_id": data.id,
+                            "handler": function (response) {
+                                // Payment Success, submit form
+                                var input = document.createElement('input');
+                                input.type = 'hidden';
+                                input.name = 'razorpayOrderId';
+                                input.value = response.razorpay_order_id;
+                                form.appendChild(input);
+
+                                var input2 = document.createElement('input');
+                                input2.type = 'hidden';
+                                input2.name = 'paymentId';
+                                input2.value = response.razorpay_payment_id;
+                                form.appendChild(input2);
+
+                                var input3 = document.createElement('input');
+                                input3.type = 'hidden';
+                                input3.name = 'razorpaySignature';
+                                input3.value = response.razorpay_signature;
+                                form.appendChild(input3);
+
+                                form.submit();
+                            },
+                            "prefill": {
+                                "name": "[[${user.name}]]",
+                                "email": "[[${user.email}]]"
+                            },
+                            "theme": {
+                                "color": "#3399cc"
+                            }
+                        };
+                        var rzp1 = new Razorpay(options);
+                        rzp1.open();
+                    })
+                    .catch(e => {
+                        console.error(e);
+                        alert("Error initializing payment");
+                    });
+            } else {
+                form.submit();
+            }
+        }
+    </script>
+    <div th:replace="~{fragments :: footer}"></div>
+</body>
+
+</html>

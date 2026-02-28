@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <!-- Header Fragment -->
+    <div th:fragment="header" class="top-header">
+        <div class="container header-inner">
+            <div class="logo">
+                <a th:href="@{/}">
+                    <img th:src="@{/images/img1.jpg}" style="width:42px">
+                </a>
+            </div>
+
+            <div class="search-wrapper d-none d-lg-block">
+                <form th:action="@{/products}" method="get">
+                    <input type="text" name="keyword" placeholder="Search here" th:value="${param.keyword}">
+                    <input type="hidden" name="category" th:if="${activePage == 'products'}"
+                        th:value="${currentCategory}">
+                </form>
+            </div>
+
+            <div class="menu ps-5 ms-lg-5 d-none d-lg-flex align-items-center">
+                <a th:href="@{/}" th:classappend="${activePage == 'home' ? 'active' : ''}">Home</a>
+                <a th:href="@{/products}" th:classappend="${activePage == 'products' ? 'active' : ''}">Products</a>
+                <a th:href="@{/offers}" th:classappend="${activePage == 'offers' ? 'active' : ''}">Offers</a>
+                <a th:href="@{/contact}" th:classappend="${activePage == 'contact' ? 'active' : ''}">Contact Us</a>
+
+                <th:block th:if="${session.user != null}">
+                    <a th:href="@{/orders}" th:classappend="${activePage == 'orders' ? 'active' : ''}">My Orders</a>
+                </th:block>
+                <th:block th:if="${session.user == null}">
+                    <a th:href="@{/login}">Log in</a>
+                </th:block>
+
+                <a th:href="@{/cart}" th:classappend="${activePage == 'cart' ? 'active' : ''}"
+                    class="position-relative">
+                    <i class="bi bi-cart"></i>
+                    <span th:if="${cartQuantity > 0}"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                        style="font-size: 0.6rem; padding: 0.25em 0.4em;" th:text="${cartQuantity}">
+                        0
+                    </span>
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <th:block th:if="${session.user != null}">
+                    <div class="dropdown user-profile-dropdown ms-3">
+                        <div class="profile-trigger" id="userProfileDropdown" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <img th:src="${session.user.profilePicture != null ? session.user.profilePicture : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}"
+                                alt="Profile" class="nav-avatar shadow-sm">
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-3"
+                            aria-labelledby="userProfileDropdown">
+                            <li class="px-2 py-1">
+                                <h6 class="mb-0 fw-bold" th:text="${session.user.name}">User Name</h6>
+                                <small class="text-muted" th:text="${session.user.email}">user@email.com</small>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li class="px-2 py-1">
+                                <label class="text-muted small fw-bold text-uppercase">Delivery Address</label>
+                                <p class="mb-0 small"
+                                    th:text="${session.user.address != null ? session.user.address : 'No address saved.'}">
+                                    Add your address in settings.</p>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li class="px-2">
+                                <button class="dropdown-item rounded-3 py-2 fw-medium mb-1" data-bs-toggle="modal"
+                                    data-bs-target="#editProfileModal">
+                                    <i class="bi bi-pencil-square me-2"></i> Edit Profile
+                                </button>
+                                <a class="dropdown-item rounded-3 py-2 text-danger fw-bold" th:href="@{/logout}">
+                                    <i class="bi bi-box-arrow-right me-2"></i> Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </th:block>
+            </div>
+
+            <button class="toggle d-lg-none" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="collapse mobile-menu" id="mobileMenu">
+            <form th:action="@{/products}" method="get">
+                <input type="text" name="keyword" placeholder="Search here" th:value="${param.keyword}">
+                <input type="hidden" name="category" th:if="${activePage == 'products'}" th:value="${currentCategory}">
+            </form>
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/products}">Products</a>
+            <a th:href="@{/offers}">Offers</a>
+            <a th:href="@{/contact}">Contact Us</a>
+            <th:block th:if="${session.user != null}">
+                <a th:href="@{/orders}">My Orders</a>
+                <a th:href="@{/logout}">Logout</a>
+            </th:block>
+            <th:block th:if="${session.user == null}">
+                <a th:href="@{/login}">Log in</a>
+            </th:block>
+            <a th:href="@{/cart}">Cart</a>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div th:if="${session.user != null}" class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Update Profile Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="editProfileForm" th:action="@{/user/profile/update}" method="post"
+                        enctype="multipart/form-data" onsubmit="return validateProfileForm()">
+                        <div class="modal-body p-4">
+                            <!-- Profile Picture Upload -->
+                            <div class="text-center mb-4">
+                                <div class="profile-pic-wrapper mx-auto"
+                                    onclick="document.getElementById('profileImageInput').click()"
+                                    style="cursor:pointer; position:relative; width:100px; height:100px;">
+                                    <img id="profilePreview"
+                                        th:src="${session.user.profilePicture != null ? session.user.profilePicture : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}"
+                                        alt="Profile"
+                                        style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #eee; transition: opacity 0.3s;">
+                                    <div class="profile-pic-overlay"
+                                        style="position:absolute; top:0; left:0; width:100px; height:100px; border-radius:50%; background:rgba(0,0,0,0.45); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.3s;">
+                                        <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                                    </div>
+                                </div>
+                                <input type="file" id="profileImageInput" name="profileImage" accept="image/*"
+                                    style="display:none;" onchange="previewProfileImage(this)">
+                                <div class="small text-muted mt-2">Click to change photo</div>
+                                <div id="imageError" class="text-danger small mt-1" style="display:none;">Only image
+                                    files under 5MB are allowed.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Full Name</label>
+                                <input type="text" id="profileName" name="name" class="form-control rounded-3"
+                                    th:value="${session.user.name}" required>
+                                <div id="nameError" class="text-danger small mt-1" style="display:none;">Name must be at
+                                    least 4 characters and contain only letters and spaces.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Mobile Number</label>
+                                <input type="text" id="profileMobile" name="mobileNumber" class="form-control rounded-3"
+                                    th:value="${session.user.mobileNumber}" required maxlength="10">
+                                <div id="mobileError" class="text-danger small mt-1" style="display:none;">Phone number
+                                    must be exactly 10 digits.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted text-uppercase">Delivery
+                                    Address</label>
+                                <textarea id="profileAddress" name="address" class="form-control rounded-3" rows="3"
+                                    th:text="${session.user.address}"
+                                    placeholder="Enter your full address for delivery..."></textarea>
+                                <div id="addressError" class="text-danger small mt-1" style="display:none;">Address
+                                    contains invalid special characters (avoid @#$%^&* etc).</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light rounded-pill px-4"
+                                data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-dark rounded-pill px-4">Save Changes</button>
+                        </div>
+                    </form>
+                    <script>
+                        function validateProfileForm() {
+                            let valid = true;
+                            const nameVal = document.getElementById('profileName').value.trim();
+                            const mobileVal = document.getElementById('profileMobile').value.trim();
+                            const addressVal = document.getElementById('profileAddress').value.trim();
+
+                            // Name: letters and spaces only, minimum 4 characters
+                            const nameRegex = /^[A-Za-z\s]{4,}$/;
+                            if (!nameVal || !nameRegex.test(nameVal)) {
+                                document.getElementById('nameError').style.display = 'block';
+                                document.getElementById('profileName').classList.add('is-invalid');
+                                valid = false;
+                            } else {
+                                document.getElementById('nameError').style.display = 'none';
+                                document.getElementById('profileName').classList.remove('is-invalid');
+                            }
+
+                            // Phone: exactly 10 digits
+                            const phoneRegex = /^[0-9]{10}$/;
+                            if (!mobileVal || !phoneRegex.test(mobileVal)) {
+                                document.getElementById('mobileError').style.display = 'block';
+                                document.getElementById('profileMobile').classList.add('is-invalid');
+                                valid = false;
+                            } else {
+                                document.getElementById('mobileError').style.display = 'none';
+                                document.getElementById('profileMobile').classList.remove('is-invalid');
+                            }
+
+                            // Address: reject dangerous special characters
+                            const addressBadChars = /[@#$%^&*!~`{}|\\<>]/;
+                            if (addressVal && addressBadChars.test(addressVal)) {
+                                document.getElementById('addressError').style.display = 'block';
+                                document.getElementById('profileAddress').classList.add('is-invalid');
+                                valid = false;
+                            } else {
+                                document.getElementById('addressError').style.display = 'none';
+                                document.getElementById('profileAddress').classList.remove('is-invalid');
+                            }
+
+                            return valid;
+                        }
+
+                        // Real-time validation: clear errors on input
+                        document.addEventListener('DOMContentLoaded', function () {
+                            const nameInput = document.getElementById('profileName');
+                            const mobileInput = document.getElementById('profileMobile');
+                            const addressInput = document.getElementById('profileAddress');
+
+                            if (nameInput) {
+                                nameInput.addEventListener('input', function () {
+                                    const nameRegex = /^[A-Za-z\s]{4,}$/;
+                                    if (nameRegex.test(this.value.trim())) {
+                                        document.getElementById('nameError').style.display = 'none';
+                                        this.classList.remove('is-invalid');
+                                    }
+                                });
+                            }
+                            if (mobileInput) {
+                                // Only allow digits to be typed
+                                mobileInput.addEventListener('input', function () {
+                                    this.value = this.value.replace(/[^0-9]/g, '');
+                                    const phoneRegex = /^[0-9]{10}$/;
+                                    if (phoneRegex.test(this.value.trim())) {
+                                        document.getElementById('mobileError').style.display = 'none';
+                                        this.classList.remove('is-invalid');
+                                    }
+                                });
+                            }
+                            if (addressInput) {
+                                addressInput.addEventListener('input', function () {
+                                    const addressBadChars = /[@#$%^&*!~`{}|\\<>]/;
+                                    if (!addressBadChars.test(this.value)) {
+                                        document.getElementById('addressError').style.display = 'none';
+                                        this.classList.remove('is-invalid');
+                                    }
+                                });
+                            }
+                        });
+
+                        // Profile picture preview
+                        function previewProfileImage(input) {
+                            const errorDiv = document.getElementById('imageError');
+                            if (input.files && input.files[0]) {
+                                const file = input.files[0];
+                                // Validate type
+                                if (!file.type.startsWith('image/')) {
+                                    errorDiv.textContent = 'Only image files (JPG, PNG, GIF) are allowed.';
+                                    errorDiv.style.display = 'block';
+                                    input.value = '';
+                                    return;
+                                }
+                                // Validate size (5MB)
+                                if (file.size > 5 * 1024 * 1024) {
+                                    errorDiv.textContent = 'Image size must be less than 5MB.';
+                                    errorDiv.style.display = 'block';
+                                    input.value = '';
+                                    return;
+                                }
+                                errorDiv.style.display = 'none';
+                                const reader = new FileReader();
+                                reader.onload = function (e) {
+                                    document.getElementById('profilePreview').src = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        }
+                    </script>
+                    <style>
+                        .profile-pic-wrapper:hover .profile-pic-overlay {
+                            opacity: 1 !important;
+                        }
+
+                        .profile-pic-wrapper:hover img {
+                            opacity: 0.85;
+                        }
+                    </style>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Fragment -->
+    <footer th:fragment="footer" class="footer">
+        <div class="container">
+            <div class="row gy-4">
+                <div class="col-md-3">
+                    <h5>Contact Us</h5>
+                    <p>Landline : 22222222</p>
+                    <p>WhatsApp : +919876543210</p>
+                    <p>Email : stepup@gmail.com</p>
+                    <p>Address : 2/38, Tamilnadu, India</p>
+                </div>
+                <div class="col-md-2">
+                    <h5>Shop</h5>
+                    <ul>
+                        <li><a th:href="@{/products(category='Kids')}">New in</a></li>
+                        <li><a th:href="@{/products(category='Womens')}">Women</a></li>
+                        <li><a th:href="@{/products(category='Mens')}">Men</a></li>
+                        <li><a th:href="@{/products(category='Womens')}">Heels</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h5>Info</h5>
+                    <ul>
+                        <li><a href="">Search</a></li>
+                        <li><a href="">Return & Exchange</a></li>
+                        <li><a href="">Privacy Policy</a></li>
+                        <li><a href="">Terms of Service</a></li>
+                        <li><a href="">Blogs</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <h5>Social Media</h5>
+                    <div class="social">
+                        <a href="https://www.facebook.com/"><i class="bi bi-facebook"></i></a>
+                        <a href="https://www.instagram.com/"><i class="bi bi-instagram"></i></a>
+                        <a href="https://x.com/"><i class="bi bi-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <h5>Lets stay in touch !</h5>
+                    <input type="email" placeholder="Enter your email" class="form-control mb-2">
+                    <button class="btn btn-light w-100">Subscribe</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Widget -->
+        <div id="chatbot-widget" class="chatbot-container">
+            <div id="chat-window" class="chat-window shadow-lg hidden">
+                <div class="chat-header">
+                    <div class="d-flex align-items-center">
+                        <div class="chat-avatar me-2">
+                            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Bot">
+                        </div>
+                        <div>
+                            <h6 class="mb-0">StepUp Support</h6>
+                            <small class="text-white-50">Online</small>
+                        </div>
+                    </div>
+                    <button id="close-chat" class="btn-close btn-close-white"></button>
+                </div>
+                <div id="chat-messages" class="chat-messages p-3">
+                    <th:block th:if="${session.chatHistory == null or session.chatHistory.empty}">
+                        <div class="bot-msg-wrapper msg-wrapper">
+                            <div class="msg-bubble">Hello! How can I help you with your shoes today? 👟</div>
+                        </div>
+                    </th:block>
+
+                    <th:block th:if="${session.chatHistory != null and !session.chatHistory.empty}">
+                        <th:block th:each="msg : ${session.chatHistory}">
+                            <div th:if="${msg.sender == 'Bot'}" class="bot-msg-wrapper msg-wrapper"
+                                th:classappend="${msg.content.contains('chat-products-carousel') ? ' carousel-msg' : ''}">
+                                <div class="msg-bubble" th:utext="${#strings.replace(msg.content, '&#10;', '<br>')}">
+                                </div>
+                            </div>
+                            <div th:if="${msg.sender == 'User'}" class="user-msg-wrapper msg-wrapper">
+                                <div class="msg-bubble" th:utext="${#strings.replace(msg.content, '&#10;', '<br>')}">
+                                </div>
+                            </div>
+                        </th:block>
+                    </th:block>
+                </div>
+                <div id="chat-suggestions" class="px-3 pb-2 d-flex flex-wrap gap-2">
+                    <!-- Suggestions will be injected here -->
+                </div>
+                <div class="chat-input-area p-3 border-top">
+                    <div class="input-group">
+                        <input type="text" id="user-input" class="form-control border-0 bg-light"
+                            placeholder="Type a message...">
+                        <button id="send-btn" class="btn btn-dark"><i class="bi bi-send-fill"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <button id="chat-toggle" class="chat-toggle-btn shadow-lg">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span class="unread-dot"></span>
+            </button>
+        </div>
+
+        <style>
+            /* Chatbot Modern Styles */
+            .chatbot-container {
+                position: fixed;
+                bottom: 20px;
+                right: 30px;
+                z-index: 9999;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            .chat-toggle-btn {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: #2f4f4f;
+                color: white;
+                border: none;
+                font-size: 24px;
+                transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+
+            .chat-toggle-btn:hover {
+                transform: scale(1.1);
+            }
+
+            .social i:hover {
+                transform: scale(1.2);
+                color: var(--pink);
+            }
+
+            /* Profile Avatar Styles */
+            .nav-avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid rgba(255, 255, 255, 0.2);
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+
+            .nav-avatar:hover {
+                transform: scale(1.05);
+            }
+
+            .user-profile-dropdown .dropdown-menu {
+                min-width: 250px;
+            }
+
+            .unread-dot {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                width: 12px;
+                height: 12px;
+                background: #ff4757;
+                border-radius: 50%;
+                border: 2px solid white;
+            }
+
+            .chat-window {
+                position: absolute;
+                bottom: 60px;
+                right: 0;
+                width: 350px;
+                height: 500px;
+                background: white;
+                border-radius: 20px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                transform-origin: bottom right;
+            }
+
+            .chat-window.hidden {
+                opacity: 0;
+                pointer-events: none;
+                transform: scale(0.8) translateY(20px);
+            }
+
+            .chat-header {
+                background: #2f4f4f;
+                color: white;
+                padding: 15px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .chat-avatar img {
+                width: 35px;
+                height: 35px;
+                border-radius: 50%;
+                background: white;
+                padding: 2px;
+            }
+
+            .chat-messages {
+                flex: 1;
+                overflow-y: auto;
+                background: #f8f9fa;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .msg-wrapper {
+                max-width: 90%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* Carousel messages get full width */
+            .carousel-msg {
+                max-width: 98% !important;
+                width: 98%;
+            }
+
+            .carousel-msg .msg-bubble {
+                padding: 10px 0 !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+            }
+
+            .bot-msg-wrapper .msg-bubble a {
+                color: #2f4f4f !important;
+                font-weight: 600;
+                text-decoration: underline;
+            }
+
+            .bot-msg-wrapper {
+                align-self: flex-start;
+            }
+
+            .user-msg-wrapper {
+                align-self: flex-end;
+            }
+
+            .msg-bubble {
+                padding: 10px 15px;
+                border-radius: 18px;
+                font-size: 0.9rem;
+                line-height: 1.4;
+                position: relative;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+            }
+
+            .bot-msg-wrapper .msg-bubble {
+                background: white;
+                color: #333;
+                border-bottom-left-radius: 4px;
+            }
+
+            .user-msg-wrapper .msg-bubble {
+                background: #2f4f4f;
+                color: white;
+                border-bottom-right-radius: 4px;
+            }
+
+            .suggestion-badge {
+                padding: 6px 14px;
+                background: #eef2f3;
+                border: 1px solid #ddd;
+                border-radius: 50px;
+                font-size: 0.8rem;
+                color: #2f4f4f;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .suggestion-badge:hover {
+                background: #2f4f4f;
+                color: white;
+                border-color: #2f4f4f;
+            }
+
+            .typing-indicator {
+                padding: 10px 15px;
+                font-size: 0.8rem;
+                color: #999;
+                font-style: italic;
+            }
+
+            .chat-messages::-webkit-scrollbar {
+                width: 5px;
+            }
+
+            .chat-messages::-webkit-scrollbar-thumb {
+                background: #ddd;
+                border-radius: 5px;
+            }
+
+            /* Horizontal Product Carousel Styles */
+            .chat-products-carousel {
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                gap: 12px;
+                padding: 10px 5px;
+                width: 100%;
+                scrollbar-width: none;
+                scroll-behavior: smooth;
+            }
+
+            .chat-products-carousel::-webkit-scrollbar {
+                display: none;
+            }
+
+            .chat-carousel-dots {
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+                margin-top: 8px;
+            }
+
+            .carousel-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: #ddd;
+                transition: all 0.3s;
+                cursor: pointer;
+            }
+
+            .carousel-dot.active {
+                background: #2f4f4f;
+                transform: scale(1.3);
+            }
+
+            /* Product Card Styles */
+            .chat-products-container {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                margin-top: 10px;
+                width: 100%;
+            }
+
+            .chat-product-card {
+                flex: 0 0 160px;
+                /* Fixed width for carousel items */
+                scroll-snap-align: start;
+                background: white;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+                border: 1px solid #eee;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .chat-product-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            }
+
+            .chat-product-img {
+                width: 100%;
+                height: 100px;
+                object-fit: cover;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .chat-product-info {
+                padding: 8px;
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+            }
+
+            .chat-product-name {
+                font-weight: 600;
+                font-size: 0.8rem;
+                margin-bottom: 4px;
+                color: #2f4f4f;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                height: 2.4em;
+                /* Ensure consistent name height */
+                line-height: 1.2;
+            }
+
+            .chat-product-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .chat-product-price {
+                font-weight: 700;
+                color: #2f4f4f;
+                font-size: 0.85rem;
+            }
+
+            .chat-product-rating {
+                font-size: 0.7rem;
+                color: #ff9f43;
+            }
+
+            .chat-product-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                margin-top: auto;
+            }
+
+            .chat-btn-cart {
+                width: 100%;
+                background: #2f4f4f;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 5px 0;
+                font-size: 0.75rem;
+                font-weight: 500;
+                transition: background 0.2s;
+                cursor: pointer;
+            }
+
+            .chat-btn-cart:hover {
+                background: #1e3a3a;
+            }
+
+            .chat-btn-details {
+                width: 100%;
+                background: #f8f9fa;
+                color: #2f4f4f;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                padding: 5px 0;
+                font-size: 0.75rem;
+                text-align: center;
+                text-decoration: none;
+                font-weight: 500;
+                transition: all 0.2s;
+            }
+
+            .chat-btn-details:hover {
+                background: #eee;
+                color: #2f4f4f;
+            }
+
+            footer a {
+                text-decoration: none;
+                color: white;
+            }
+        </style>
+
+        <script>
+            // ---- Global function: must be outside DOMContentLoaded ----
+            // ---- Global function: must be outside DOMContentLoaded ----
+            function addToCartFromChat(productId, name) {
+                const formData = new URLSearchParams();
+                formData.append('productId', productId);
+                formData.append('quantity', 1);
+
+                fetch('/cart/add', { method: 'POST', body: formData })
+                    .then(response => {
+                        // Use the globally available addMessage if possible, or fallback
+                        if (window.chatAddMessage) {
+                            if (response.ok) {
+                                window.chatAddMessage(`✅ <b>${name}</b> added to your cart!`, true, ["View Cart", "Checkout"]);
+                            } else if (response.status === 401) {
+                                window.chatAddMessage('🔒 Please <a href="/login">log in</a> to add items to your cart.', true, ["Login"]);
+                            } else {
+                                window.chatAddMessage('Sorry, could not add to cart. Please try from the product page.', true);
+                            }
+                        }
+                    })
+                    .catch(() => console.error('Cart add error'));
+            }
+            // -----------------------------------------------------------
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const toggle = document.getElementById('chat-toggle');
+                const chatWindow = document.getElementById('chat-window');
+                const close = document.getElementById('close-chat');
+                const sendBtn = document.getElementById('send-btn');
+                const userInput = document.getElementById('user-input');
+                const messagesContainer = document.getElementById('chat-messages');
+                const suggestionsContainer = document.getElementById('chat-suggestions');
+
+                toggle.addEventListener('click', () => {
+                    chatWindow.classList.toggle('hidden');
+                    document.querySelector('.unread-dot').style.display = 'none';
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                });
+
+                // Scroll to bottom on initial load just in case
+                setTimeout(() => {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 100);
+
+                close.addEventListener('click', () => {
+                    chatWindow.classList.add('hidden');
+                });
+
+                function addMessage(text, isBot, suggestions = []) {
+                    const wrapper = document.createElement('div');
+                    const isCarousel = isBot && text.includes('chat-products-carousel');
+                    wrapper.className = (isBot ? 'bot-msg-wrapper' : 'user-msg-wrapper') + ' msg-wrapper' + (isCarousel ? ' carousel-msg' : '');
+
+                    const bubble = document.createElement('div');
+                    bubble.className = 'msg-bubble';
+                    bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+                    wrapper.appendChild(bubble);
+                    messagesContainer.appendChild(wrapper);
+
+                    // Add dots logic for carousel
+                    if (isCarousel) {
+                        const carousel = bubble.querySelector('.chat-products-carousel');
+                        const cards = bubble.querySelectorAll('.chat-product-card');
+                        if (carousel && cards.length > 1) {
+                            const dotsContainer = document.createElement('div');
+                            dotsContainer.className = 'chat-carousel-dots';
+                            cards.forEach((_, i) => {
+                                const dot = document.createElement('div');
+                                dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+                                dot.onclick = () => {
+                                    carousel.scrollTo({ left: i * 172, behavior: 'smooth' });
+                                };
+                                dotsContainer.appendChild(dot);
+                            });
+                            bubble.appendChild(dotsContainer);
+
+                            carousel.onscroll = () => {
+                                const index = Math.round(carousel.scrollLeft / 172);
+                                bubble.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+                                    dot.classList.toggle('active', i === index);
+                                });
+                            };
+
+                            let isDown = false;
+                            let startX;
+                            let scrollLeft;
+
+                            carousel.addEventListener('mousedown', (e) => {
+                                isDown = true;
+                                carousel.style.cursor = 'grabbing';
+                                startX = e.pageX - carousel.offsetLeft;
+                                scrollLeft = carousel.scrollLeft;
+                            });
+                            carousel.addEventListener('mouseleave', () => {
+                                isDown = false;
+                                carousel.style.cursor = 'auto';
+                            });
+                            carousel.addEventListener('mouseup', () => {
+                                isDown = false;
+                                carousel.style.cursor = 'auto';
+                            });
+                            carousel.addEventListener('mousemove', (e) => {
+                                if (!isDown) return;
+                                e.preventDefault();
+                                const x = e.pageX - carousel.offsetLeft;
+                                const walk = (x - startX) * 2;
+                                carousel.scrollLeft = scrollLeft - walk;
+                            });
+                        }
+                    }
+
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                    // Update Suggestions
+                    suggestionsContainer.innerHTML = '';
+                    if (isBot && suggestions.length > 0) {
+                        suggestions.forEach(s => {
+                            const badge = document.createElement('div');
+                            badge.className = 'suggestion-badge';
+                            badge.textContent = s;
+                            badge.onclick = () => {
+                                userInput.value = s;
+                                sendMessage();
+                            };
+                            suggestionsContainer.appendChild(badge);
+                        });
+                    }
+                }
+
+                // Make addMessage available for addToCartFromChat
+                window.chatAddMessage = addMessage;
+
+                function showTyping() {
+                    const typing = document.createElement('div');
+                    typing.className = 'typing-indicator';
+                    typing.id = 'typing';
+                    typing.textContent = 'StepUp is typing...';
+                    messagesContainer.appendChild(typing);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+
+                function removeTyping() {
+                    const typing = document.getElementById('typing');
+                    if (typing) typing.remove();
+                }
+
+                async function sendMessage() {
+                    const message = userInput.value.trim();
+                    if (!message) return;
+
+                    addMessage(message, false);
+                    userInput.value = '';
+
+                    showTyping();
+
+                    try {
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: message })
+                        });
+                        const data = await response.json();
+
+                        setTimeout(() => {
+                            removeTyping();
+                            addMessage(data.message, true, data.suggestions);
+                        }, 800);
+
+                    } catch (error) {
+                        console.error('Chat error:', error);
+                        removeTyping();
+                        addMessage("Sorry, I'm having trouble connecting right now. Please try again later.", true);
+                    }
+                }
+
+                sendBtn.addEventListener('click', sendMessage);
+                userInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') sendMessage();
+                });
+            });
+        </script>
+    </footer>
+
+</body>
+
+</html>

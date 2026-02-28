@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>StepUp.in - Cart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/style.css}">
+  <link rel="stylesheet" th:href="@{/cart.css}">
+</head>
+
+<body>
+
+  <div th:replace="~{fragments :: header}"></div>
+
+  <div class="container mt-5 mb-5">
+    <h2 class="text-center mb-4" style="font-family:'Playfair Display'">Your Shopping Cart</h2>
+
+    <!-- Alerts -->
+    <div th:if="${couponSuccess}" class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm"
+      role="alert">
+      <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${couponSuccess}">Success</span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${couponError}" class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm"
+      role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${couponError}">Error</span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div th:if="${cart == null || cart.items.empty}" class="text-center">
+      <p>Your cart is empty.</p>
+      <a th:href="@{/products}" class="btn btn-primary">Start Shopping</a>
+    </div>
+
+    <div th:if="${cart != null && !cart.items.empty}">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="item : ${cart.items}" th:id="'row-' + ${item.id}">
+              <td class="d-flex align-items-center">
+                <img th:src="${item.product.image}"
+                  style="width: 60px; height: 60px; object-fit: cover; margin-right: 15px; border-radius: 5px;">
+                <div>
+                  <span th:text="${item.product.name}" class="d-block fw-bold">Product Name</span>
+                  <small class="text-muted">Size: </small>
+                  <select class="form-select form-select-sm d-inline-block w-auto"
+                    th:onchange="'updateSize(' + ${item.id} + ', this.value)'">
+                    <option th:each="sizeEntry : ${item.product.sizes}" th:value="${sizeEntry.key}"
+                      th:text="${sizeEntry.key}" th:selected="${item.size == sizeEntry.key}"></option>
+                  </select>
+                </div>
+              </td>
+              <td th:text="'₹ ' + ${item.product.price}">₹ 0.00</td>
+              <td>
+                <div class="input-group input-group-sm" style="width: 110px;">
+                  <button class="btn btn-outline-secondary" type="button"
+                    th:onclick="'updateQuantity(' + ${item.id} + ', ' + (${item.quantity} - 1) + ')'">-</button>
+                  <input type="number" class="form-control text-center" th:id="'qty-' + ${item.id}"
+                    th:value="${item.quantity}" min="1" th:onchange="'updateQuantity(' + ${item.id} + ', this.value)'"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                  <button class="btn btn-outline-secondary" type="button"
+                    th:onclick="'updateQuantity(' + ${item.id} + ', ' + (${item.quantity} + 1) + ')'">+</button>
+                </div>
+              </td>
+              <td th:id="'subtotal-' + ${item.id}" th:text="'₹ ' + ${item.subtotal}">₹ 0.00</td>
+              <td>
+                <button type="button" class="btn btn-danger btn-sm" th:onclick="'removeItem(' + ${item.id} + ')'">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="row mt-5">
+        <div class="col-md-5">
+          <div class="bg-white p-4 rounded-4 shadow-sm">
+            <h5 class="fw-bold mb-3">Have a coupon?</h5>
+            <form th:action="@{/cart/apply-coupon}" method="post" class="d-flex gap-2">
+              <input type="text" name="couponCode" class="form-control rounded-pill px-3"
+                placeholder="Enter code (e.g. STEPUP50)"
+                th:value="${cart.appliedCoupon != null ? cart.appliedCoupon.code : ''}">
+              <button type="submit" class="btn btn-dark rounded-pill px-4">Apply</button>
+            </form>
+            <div th:if="${cart.appliedCoupon != null}" class="mt-2 small text-success">
+              Applied: <span th:text="${cart.appliedCoupon.discountPercentage} + '% off'">10% off</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-7 text-end">
+          <div class="p-4 bg-light rounded-4 shadow-sm d-inline-block" style="min-width: 300px;">
+            <h5 class="text-muted small mb-2 text-uppercase fw-bold">Summary</h5>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Subtotal:</span>
+              <span id="cart-subtotal" th:text="'₹ ' + ${#aggregates.sum(cart.items.![subtotal])}">₹ 0.00</span>
+            </div>
+            <div th:if="${cart.appliedCoupon != null}" class="d-flex justify-content-between mb-2 text-success">
+              <span>Discount (<span th:text="${cart.appliedCoupon.discountPercentage} + '%'">0%</span>):</span>
+              <span th:text="'- ₹ ' + (${#aggregates.sum(cart.items.![subtotal])} - ${cart.totalAmount})">- ₹
+                0.00</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="mb-0 fw-bold" style="font-family:'Playfair Display'">Total:</h4>
+              <h4 class="mb-0 fw-bold" id="cart-total" th:text="'₹ ' + ${cart.totalAmount}">₹ 0.00</h4>
+            </div>
+            <a th:href="@{/checkout}" class="btn btn-dark btn-lg w-100 rounded-pill">Proceed to Checkout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer same as others (omitted for brevity, or include if critical) -->
+
+  <div th:replace="~{fragments :: footer}"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function updateTotals(data) {
+      if (data.cartTotal !== undefined)
+        document.getElementById('cart-total').textContent = '₹ ' + data.cartTotal.toFixed(2);
+      if (data.cartSubtotal !== undefined)
+        document.getElementById('cart-subtotal').textContent = '₹ ' + data.cartSubtotal.toFixed(2);
+    }
+
+    function updateQuantity(id, qty) {
+      qty = parseInt(qty);
+      if (isNaN(qty) || qty < 1) {
+        alert('Please enter a valid quantity (minimum 1).');
+        // reset input to previous value
+        var input = document.getElementById('qty-' + id);
+        if (input) input.value = input.defaultValue;
+        return;
+      }
+      var params = new URLSearchParams({ cartItemId: id, quantity: qty });
+      fetch('/cart/update-quantity', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(data => {
+          // update the quantity input's defaultValue (so reset still works)
+          var input = document.getElementById('qty-' + id);
+          if (input) input.defaultValue = qty;
+          // update row subtotal
+          var subtotalCell = document.getElementById('subtotal-' + id);
+          if (subtotalCell && data.itemSubtotal !== undefined)
+            subtotalCell.textContent = '₹ ' + data.itemSubtotal.toFixed(2);
+          updateTotals(data);
+        })
+        .catch(e => { console.error(e); alert('Failed to update quantity.'); });
+    }
+
+    function updateSize(id, size) {
+      var params = new URLSearchParams({ cartItemId: id, size: size });
+      fetch('/cart/update-size', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(data => { updateTotals(data); })
+        .catch(e => { console.error(e); alert('Failed to update size.'); });
+    }
+
+    function removeItem(id) {
+      var params = new URLSearchParams({ cartItemId: id });
+      fetch('/cart/remove', { method: 'POST', body: params })
+        .then(r => r.json())
+        .then(data => {
+          var row = document.getElementById('row-' + id);
+          if (row) row.remove();
+          if (data.isEmpty) {
+            // Reload so the empty-cart message shows
+            window.location.reload();
+          } else {
+            updateTotals(data);
+          }
+        })
+        .catch(e => { console.error(e); alert('Failed to remove item.'); });
+    }
+  </script>
+</body>
+
+</html>

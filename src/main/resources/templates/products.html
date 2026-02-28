@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>StepUp.in - Products</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Swiper -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <!-- Fonts (VERY IMPORTANT) -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/kids.css}"> <!-- Reuse Kids Style -->
+</head>
+
+<body>
+
+    <div th:replace="~{fragments :: header}"></div>
+
+    <!-- ===== BRAND ===== -->
+    <div class="container brand-area text-center">
+        <h1>StepUp.in</h1>
+        <div class="divider"></div>
+
+        <ul class="category">
+            <li th:if="${currentCategory == 'Womens'}">Womens</li>
+            <li th:if="${currentCategory == 'Mens'}">Mens</li>
+            <li th:if="${currentCategory == 'Kids'}">Kids</li>
+            <li th:if="${currentCategory == 'Brands'}">Brands</li>
+            <li th:if="${currentCategory == 'Offers'}">Offers</li>
+            <li th:if="${currentCategory == null}">All Products</li>
+        </ul>
+
+        <div class="divider"></div>
+    </div>
+
+    <!-- ================= PRODUCTS PAGE ================= -->
+    <section class="kids-page container-fluid">
+
+        <!-- FILTER BAR -->
+        <div class="container filter-bar">
+            <div class="filter-left">
+                <span th:text="${currentCategory != null ? currentCategory + ' →' : 'All Products →'}">Filters →</span>
+            </div>
+
+            <div class="filter-right d-flex gap-2">
+                <!-- Category Filter -->
+                <div class="dropdown">
+                    <button class="sort-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Category
+                    </button>
+                    <ul class="dropdown-menu border-dark shadow">
+                        <li><a class="dropdown-item" th:href="@{/products}">All</a></li>
+                        <li><a class="dropdown-item" th:href="@{/products(category='Mens')}">Mens</a></li>
+                        <li><a class="dropdown-item" th:href="@{/products(category='Womens')}">Womens</a></li>
+                        <li><a class="dropdown-item" th:href="@{/products(category='Kids')}">Kids</a></li>
+                    </ul>
+                </div>
+
+                <!--<button class="sort-btn" id="sortToggle">Sort by</button>-->
+
+                <div class="sort-menu" id="sortDropdown">
+                    <div class="sort-item" th:classappend="${currentSort == 'Newest' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='Newest', category=${currentCategory}, keyword=${param.keyword})}">Newest</a>
+                    </div>
+                    <div class="sort-item" th:classappend="${currentSort == 'A-Z' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='A-Z', category=${currentCategory}, keyword=${param.keyword})}">A-Z</a>
+                    </div>
+                    <div class="sort-item" th:classappend="${currentSort == 'Z-A' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='Z-A', category=${currentCategory}, keyword=${param.keyword})}">Z-A</a>
+                    </div>
+                    <div class="sort-item" th:classappend="${currentSort == 'Price:Low-High' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='Price:Low-High', category=${currentCategory}, keyword=${param.keyword})}">Price:Low-High</a>
+                    </div>
+                    <div class="sort-item" th:classappend="${currentSort == 'Price:High-Low' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='Price:High-Low', category=${currentCategory}, keyword=${param.keyword})}">Price:High-Low</a>
+                    </div>
+                    <div class="sort-item" th:classappend="${currentSort == 'Top Rated' ? 'active' : ''}">
+                        <a
+                            th:href="@{/products(sort='Top Rated', category=${currentCategory}, keyword=${param.keyword})}">Top
+                            Rated</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS -->
+        <div class="container mt-5">
+            <div class="row g-5" id="productGrid">
+
+                <!-- PRODUCT CARD -->
+                <div class="col-lg-3 col-md-6" th:each="product : ${products}">
+                    <div class="kids-card">
+                        <a th:href="@{/product/{id}(id=${product.id})}">
+                            <img th:src="${product.image}">
+                        </a>
+                        <h5 th:text="${product.name}">Product Name</h5>
+
+                        <div class="stars">★★★★★</div>
+                        <p class="price" th:text="'MRP₹ ' + ${product.price}">MRP₹ 2,799</p>
+
+                        <p class="color" th:text="${product.category}">Category</p>
+
+                        <div class="btn-row">
+                            <button class="buy" th:attr="data-id=${product.id}">Buy</button>
+                            <button class="cart" th:attr="data-id=${product.id}">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fallback if no products -->
+                <div class="col-12 text-center" th:if="${products.empty}">
+                    <p class="py-5 text-muted lead">No products found matching your filters.</p>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+    <div th:replace="~{fragments :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/kids.js}"></script>
+</body>
+
+</html>

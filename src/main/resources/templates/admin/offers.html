@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Offers - StepUp Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+
+<body>
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+    <main class="main-content">
+        <div th:replace="~{admin/fragments :: header(pageTitle='Offers Management')}"></div>
+        <div class="d-flex justify-content-end mb-4">
+            <a th:href="@{/admin/offer/new}" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i> Create New Offer
+            </a>
+        </div>
+        <div class="row g-4">
+            <div th:each="offer : ${offers}" class="col-md-6 col-lg-4">
+                <div class="admin-table-card shadow-sm h-100 p-0 overflow-hidden">
+                    <img th:src="${offer.image}" class="w-100" style="height: 180px; object-fit: cover;">
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge rounded-pill"
+                                th:classappend="${offer.active ? 'bg-success' : 'bg-danger'}"
+                                th:text="${offer.active ? 'Active' : 'Hidden'}">Active</span>
+                            <small class="text-muted" th:text="${offer.expiryDate}">Date</small>
+                        </div>
+                        <h5 class="fw-bold" th:text="${offer.title}">Title</h5>
+                        <p class="text-muted small mb-4" th:text="${offer.description}">Desc</p>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/admin/offer/edit/{id}(id=${offer.id})}"
+                                class="btn btn-dark w-100 rounded-pill py-2">Edit</a>
+                            <a th:href="@{/admin/offer/delete/{id}(id=${offer.id})}"
+                                class="btn btn-outline-danger w-auto px-3 rounded-pill py-2"
+                                onclick="return confirm('Delete offer?')"><i class="bi bi-trash"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${offers.empty}" class="col-12 text-center py-5">
+                <p class="text-muted lead">No offers created yet.</p>
+            </div>
+        </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

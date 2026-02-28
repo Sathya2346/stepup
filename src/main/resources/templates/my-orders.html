@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>StepUp.in - My Orders</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .orders-container {
+            max-width: 900px;
+            margin: 50px auto;
+        }
+
+        .page-title {
+            font-family: 'Playfair Display';
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: #2f4f4f;
+        }
+
+        .order-card {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eee;
+            margin-bottom: 25px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .order-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .order-header {
+            padding: 15px 25px;
+            background: #fafafa;
+            border-bottom: 1px solid #f1f1f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .order-body {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+        }
+
+        .order-info {
+            flex-grow: 1;
+        }
+
+        .order-status {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-delivered {
+            color: #28a745;
+        }
+
+        .status-shipped {
+            color: #0d6efd;
+        }
+
+        .status-pending {
+            color: #ffc107;
+        }
+
+        .status-cancelled {
+            color: #dc3545;
+        }
+
+        .order-price {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2f4f4f;
+        }
+
+        .track-btn {
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .empty-orders {
+            text-align: center;
+            padding: 80px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div th:replace="~{fragments :: header}"></div>
+
+    <div class="container orders-container">
+        <h2 class="page-title text-center">My Orders</h2>
+
+        <div th:if="${successMessage}"
+            class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}">Success!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}"
+            class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm border-0 mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}">Error!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${orders.empty}" class="empty-orders">
+            <img src="https://cdn-icons-png.flaticon.com/512/4555/4555971.png"
+                style="width: 100px; opacity: 0.3; margin-bottom: 25px;">
+            <h4>No orders yet!</h4>
+            <p class="text-muted">Explore our latest shoes and start shopping today.</p>
+            <a th:href="@{/products}" class="btn btn-dark px-4 py-2 mt-3 rounded-pill">Shop Now</a>
+        </div>
+
+        <div th:each="order : ${orders}" class="order-card">
+            <div class="order-header">
+                <div>
+                    <span>ORDER <span class="fw-bold text-dark" th:text="'#' + ${order.id}">#123</span></span>
+                    <span class="ms-3" th:text="${#temporals.format(order.orderDate, 'MMM dd, yyyy')}">Jan 26,
+                        2026</span>
+                </div>
+                <div>
+                    <span class="me-2 text-dark fw-medium">Tracking:</span>
+                    <span class="badge bg-secondary" th:text="${order.trackingNumber}">TRK987654</span>
+                </div>
+            </div>
+            <div class="order-body">
+                <div class="order-info">
+                    <div class="mb-2">
+                        <span class="order-status"
+                            th:classappend="${order.status.name() == 'DELIVERED' ? 'status-delivered' : (order.status.name() == 'CANCELLED' ? 'status-cancelled' : (order.status.name() == 'PENDING' ? 'status-pending' : 'status-shipped'))}"
+                            th:text="${order.status}">
+                            OUT FOR DELIVERY
+                        </span>
+                    </div>
+                    <div class="order-price" th:text="'₹ ' + ${order.totalAmount}">₹ 2,499</div>
+                    <p class="text-muted small mb-0 mt-1"
+                        th:text="${#lists.size(order.items)} + ' Items in this order'">1 Item</p>
+                </div>
+                <div class="order-actions text-end">
+                    <div class="d-flex flex-column gap-2 align-items-end">
+                        <a th:href="@{/orders/track/{id}(id=${order.id})}" class="btn btn-dark track-btn w-100">Track
+                            Order</a>
+
+                        <!-- Cancel Button (only for PENDING/SHIPPED) -->
+                        <th:block th:if="${order.status.name() == 'PENDING' || order.status.name() == 'SHIPPED'}">
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                data-bs-toggle="modal" th:data-bs-target="'#cancelModal' + ${order.id}">
+                                Cancel Order
+                            </button>
+                        </th:block>
+
+                        <!-- Return Button (only for DELIVERED) -->
+                        <th:block th:if="${order.status.name() == 'DELIVERED'}">
+                            <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                data-bs-toggle="modal" th:data-bs-target="'#returnModal' + ${order.id}">
+                                Return Items
+                            </button>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modals moved outside of cards to avoid clipping -->
+        <th:block th:each="order : ${orders}">
+            <!-- Cancel Modal -->
+            <div th:if="${order.status.name() == 'PENDING' || order.status.name() == 'SHIPPED'}" class="modal fade"
+                th:id="'cancelModal' + ${order.id}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered text-start">
+                    <div class="modal-content border-0 rounded-4 shadow-lg">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title fw-bold">Cancel Order #<span th:text="${order.id}"></span></h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form th:action="@{/orders/cancel}" method="post">
+                            <input type="hidden" name="orderId" th:value="${order.id}">
+                            <div class="modal-body">
+                                <p>Are you sure you want to cancel this order?</p>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Reason for Cancellation</label>
+                                    <select name="reason" class="form-select rounded-3" required>
+                                        <option value="Changed my mind">Changed my mind</option>
+                                        <option value="Incorrect address">Incorrect address</option>
+                                        <option value="Found better price elsewhere">Found better price elsewhere
+                                        </option>
+                                        <option value="Delivery taking too long">Delivery taking too long</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light rounded-pill"
+                                    data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-danger rounded-pill px-4">Confirm
+                                    Cancellation</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Modal -->
+            <div th:if="${order.status.name() == 'DELIVERED'}" class="modal fade" th:id="'returnModal' + ${order.id}"
+                tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered text-start">
+                    <div class="modal-content border-0 rounded-4 shadow-lg">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title fw-bold">Return Request - Order #<span th:text="${order.id}"></span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form th:action="@{/orders/return}" method="post">
+                            <input type="hidden" name="orderId" th:value="${order.id}">
+                            <div class="modal-body">
+                                <p>Why are you returning this order? (7-day hassle-free return policy)</p>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Reason for Return</label>
+                                    <select name="reason" class="form-select rounded-3" required>
+                                        <option value="Size doesn't fit">Size doesn't fit</option>
+                                        <option value="Defective / Damaged">Defective / Damaged</option>
+                                        <option value="Different from image">Different from image</option>
+                                        <option value="Quality not as expected">Quality not as expected</option>
+                                        <option value="Received wrong item">Received wrong item</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0">
+                                <button type="button" class="btn btn-light rounded-pill"
+                                    data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-dark rounded-pill px-4">Submit Return
+                                    Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+    </div>
+
+    <div th:replace="~{fragments :: footer}"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

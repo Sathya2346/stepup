@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Chatbot - StepUp Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+
+<body>
+
+    <div th:replace="~{admin/fragments :: sidebar}"></div>
+
+    <main class="main-content">
+        <div th:replace="~{admin/fragments :: header(pageTitle='Chatbot Management')}"></div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <a th:href="@{/admin/chatbot/new}" class="btn btn-primary rounded-pill px-4">
+                <i class="bi bi-plus-lg me-2"></i> Add New Rule
+            </a>
+        </div>
+
+        <div class="admin-table-card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Keywords</th>
+                            <th>Response Snippet</th>
+                            <th>Suggestions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="rule : ${rules}">
+                            <td>
+                                <span th:each="kw : ${#strings.arraySplit(rule.keywords, ',')}"
+                                    class="badge bg-light text-dark border me-1 mb-1" th:text="${kw.trim()}"></span>
+                            </td>
+                            <td class="text-muted small" th:text="${#strings.abbreviate(rule.response, 100)}">
+                                Response...</td>
+                            <td th:text="${rule.suggestions}">sug1, sug2</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a th:href="@{/admin/chatbot/edit/{id}(id=${rule.id})}"
+                                        class="btn btn-sm btn-outline-warning rounded-pill"><i
+                                            class="bi bi-pencil"></i></a>
+                                    <a th:href="@{/admin/chatbot/delete/{id}(id=${rule.id})}"
+                                        class="btn btn-sm btn-outline-danger rounded-pill"
+                                        onclick="return confirm('Delete this chatbot rule?')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${rules.empty}">
+                            <td colspan="4" class="text-center py-5">
+                                <i class="bi bi-chat-dots display-1 text-muted d-block mb-3"></i>
+                                <span class="text-muted">No chatbot rules defined yet.</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('sidebarCollapse').addEventListener('click', function () {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+    </script>
+</body>
+
+</html>

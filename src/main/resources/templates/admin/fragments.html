@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <!-- Sidebar Fragment -->
+    <div th:fragment="sidebar" class="sidebar shadow-sm" id="sidebar">
+        <div class="brand">
+            <i class="bi bi-shield-check me-2"></i> StepUp Admin
+        </div>
+
+        <nav class="nav flex-column mt-3">
+            <a th:href="@{/admin}" class="nav-link" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+            <a th:href="@{/admin/orders}" class="nav-link" th:classappend="${activePage == 'orders' ? 'active' : ''}">
+                <i class="bi bi-bag-check"></i> Orders
+            </a>
+            <a th:href="@{/admin/products}" class="nav-link"
+                th:classappend="${activePage == 'products' ? 'active' : ''}">
+                <i class="bi bi-bluesky"></i> Products
+            </a>
+            <a th:href="@{/admin/chatbot}" class="nav-link" th:classappend="${activePage == 'chatbot' ? 'active' : ''}">
+                <i class="bi bi-chat-left-dots"></i> Chatbot
+            </a>
+            <a th:href="@{/admin/coupons}" class="nav-link" th:classappend="${activePage == 'coupons' ? 'active' : ''}">
+                <i class="bi bi-ticket-perforated"></i> Coupons
+            </a>
+            <a th:href="@{/admin/offers}" class="nav-link" th:classappend="${activePage == 'offers' ? 'active' : ''}">
+                <i class="bi bi-gift"></i> Offers
+            </a>
+            <div class="mt-auto px-4 pb-4">
+                <hr>
+                <a th:href="@{/}" class="btn btn-outline-dark w-100 rounded-pill mb-2">
+                    <i class="bi bi-arrow-left"></i> View Site
+                </a>
+                <a th:href="@{/logout}" class="btn btn-danger w-100 rounded-pill">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Header / Navbar Fragment -->
+    <div th:fragment="header" class="top-nav shadow-sm">
+        <div class="d-flex align-items-center">
+            <button id="sidebarCollapse" class="me-3 d-lg-none">
+                <i class="bi bi-list"></i>
+            </button>
+            <h4 class="mb-0 fw-bold" th:text="${pageTitle}">Dashboard</h4>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-light rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i> Admin User
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                <li><a class="dropdown-content px-3 py-2 d-block" href="#">Settings</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><a class="dropdown-content px-3 py-2 d-block text-danger" th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+
+</html>

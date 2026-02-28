@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>StepUp.in - Track Order</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/style.css}">
+    <style>
+        :root {
+            --step-active: #2f4f4f;
+            --step-inactive: #e9ecef;
+            --step-success: #28a745;
+        }
+
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .track-container {
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+
+        .tracking-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: none;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .tracking-header {
+            background: var(--step-active);
+            color: #fff;
+            padding: 25px 35px;
+        }
+
+        .tracking-header h3 {
+            margin: 0;
+            font-family: 'Playfair Display';
+            font-weight: 600;
+        }
+
+        .tracking-header p {
+            margin: 5px 0 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        /* Modern Stepper */
+        .stepper-row {
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .stepper-container {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stepper-container::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 5%;
+            width: 90%;
+            height: 4px;
+            background: var(--step-inactive);
+            z-index: -1;
+        }
+
+        .step-item {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-icon {
+            width: 55px;
+            height: 55px;
+            background: #fff;
+            border: 4px solid var(--step-inactive);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 1.4rem;
+            color: #adb5bd;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-item.active .step-icon {
+            border-color: var(--step-active);
+            color: var(--step-active);
+            transform: scale(1.1);
+            background: #fff;
+        }
+
+        .step-item.completed .step-icon {
+            background: var(--step-success);
+            border-color: var(--step-success);
+            color: #fff;
+        }
+
+        .step-item.active .step-text {
+            color: var(--step-active);
+            font-weight: 600;
+        }
+
+        .step-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 25px;
+            left: 5%;
+            height: 4px;
+            background: var(--step-success);
+            z-index: -1;
+            transition: width 1s ease;
+        }
+
+        /* Map and Details */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 15px;
+            z-index: 1;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 15px;
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0;
+            }
+        }
+
+        .detail-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #f1f1f1;
+            padding-bottom: 10px;
+        }
+
+        .order-item-card {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .order-item-card:last-child {
+            border: none;
+        }
+
+        .order-item-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-right: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .stepper-container {
+                flex-direction: column;
+                align-items: flex-start;
+                padding-left: 50px;
+            }
+
+            .stepper-container::before {
+                left: 31px;
+                top: 0;
+                width: 4px;
+                height: 100%;
+            }
+
+            .progress-line {
+                left: 31px;
+                top: 0;
+                width: 4px;
+            }
+
+            .step-item {
+                display: flex;
+                align-items: center;
+                margin-bottom: 30px;
+                text-align: left;
+            }
+
+            .step-icon {
+                margin: 0 20px 0 0;
+            }
+
+            .step-item:last-child {
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div th:replace="~{fragments :: header}"></div>
+
+    <div class="container track-container">
+        <div class="tracking-card">
+            <div class="tracking-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h3>Track Order #<span th:text="${order.trackingNumber}">TRK123456</span></h3>
+                    <p>Placed on: <span th:text="${#temporals.format(order.orderDate, 'MMM dd, yyyy - hh:mm a')}">Jan
+                            26, 2026</span></p>
+                </div>
+                <div class="text-end d-none d-md-block">
+                    <span class="badge bg-light text-dark py-2 px-3 rounded-pill"
+                        th:text="${order.status}">OUT_FOR_DELIVERY</span>
+                </div>
+            </div>
+
+            <div class="stepper-row">
+                <!-- Progress bar line -->
+                <div class="progress-line"
+                    th:style="'width: ' + (${order.status.name() == 'PENDING' ? '5%' : (order.status.name() == 'SHIPPED' ? '35%' : (order.status.name() == 'OUT_FOR_DELIVERY' ? '65%' : (order.status.name() == 'DELIVERED' ? '100%' : '0%')))}) + '; background: ' + (${order.status.name() == 'CANCELLED' ? '#dc3545' : 'var(--step-success)'}) + ';'">
+                </div>
+
+                <div class="stepper-container">
+                    <div class="step-item"
+                        th:classappend="${order.status.name() == 'CANCELLED' ? 'text-danger' : (order.status.name() == 'PENDING' || order.status.name() == 'SHIPPED' || order.status.name() == 'OUT_FOR_DELIVERY' || order.status.name() == 'DELIVERED' ? 'completed' : '')}">
+                        <div class="step-icon"><i
+                                th:class="${order.status.name() == 'CANCELLED' ? 'bi bi-x-circle' : 'bi bi-bag-check'}"></i>
+                        </div>
+                        <p class="step-text"
+                            th:text="${order.status.name() == 'CANCELLED' ? 'Cancelled' : 'Confirmed'}">Confirmed</p>
+                    </div>
+                    <div class="step-item"
+                        th:classappend="${order.status.name() == 'SHIPPED' || order.status.name() == 'OUT_FOR_DELIVERY' || order.status.name() == 'DELIVERED' ? 'completed' : (order.status.name() == 'SHIPPED' ? 'active' : '')}">
+                        <div class="step-icon"><i class="bi bi-box-seam"></i></div>
+                        <p class="step-text">Shipped</p>
+                    </div>
+                    <div class="step-item"
+                        th:classappend="${order.status.name() == 'OUT_FOR_DELIVERY' || order.status.name() == 'DELIVERED' ? 'completed' : (order.status.name() == 'OUT_FOR_DELIVERY' ? 'active' : '')}">
+                        <div class="step-icon"><i class="bi bi-bicycle"></i></div>
+                        <p class="step-text">Out for Delivery</p>
+                    </div>
+                    <div class="step-item"
+                        th:classappend="${order.status.name() == 'DELIVERED' ? 'completed active' : ''}">
+                        <div class="step-icon"><i class="bi bi-house-heart"></i></div>
+                        <p class="step-text">Delivered</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="tracking-card p-4">
+                    <div th:if="${order.status.name() == 'OUT_FOR_DELIVERY'}">
+                        <div class="live-indicator">
+                            <span class="pulse"></span> LIVE TRACKING
+                        </div>
+                        <h5 class="mb-4">Our delivery agent is nearby your location</h5>
+                        <div id="map" class="mb-4 shadow-sm"></div>
+                    </div>
+
+                    <div th:unless="${order.status.name() == 'OUT_FOR_DELIVERY'}" class="text-center py-5">
+                        <div th:if="${order.status.name() == 'CANCELLED'}">
+                            <img src="https://cdn-icons-png.flaticon.com/512/1053/1053140.png"
+                                style="width: 120px; opacity: 0.6; margin-bottom: 20px;">
+                            <h4 class="text-danger">This order has been cancelled</h4>
+                            <p class="text-muted">Reason: <span class="fw-bold" th:text="${order.cancelReason}">Reason
+                                    not provided</span></p>
+                            <p th:if="${order.refundStatus != 'NOT_APPLICABLE'}" class="mt-3">
+                                Refund Status: <span class="badge bg-info text-dark"
+                                    th:text="${order.refundStatus}">PENDING</span>
+                            </p>
+                        </div>
+                        <div th:if="${order.status.name() == 'RETURN_REQUESTED' || order.status.name() == 'RETURNED'}">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3500/3500833.png"
+                                style="width: 120px; opacity: 0.6; margin-bottom: 20px;">
+                            <h4 class="text-warning">Return / Exchange Under Process</h4>
+                            <p class="text-muted" th:text="'Status: ' + ${order.status}">RETURN_REQUESTED</p>
+                        </div>
+                        <div
+                            th:if="${order.status.name() == 'PENDING' || order.status.name() == 'SHIPPED' || order.status.name() == 'DELIVERED'}">
+                            <img th:src="${order.status.name() == 'PENDING' ? 'https://cdn-icons-png.flaticon.com/512/3500/3500833.png' : 'https://cdn-icons-png.flaticon.com/512/754/754848.png'}"
+                                style="width: 120px; opacity: 0.6; margin-bottom: 20px;">
+                            <h4
+                                th:text="${order.status.name() == 'DELIVERED' ? 'Order Delivered Successfully' : 'Tracking will be available once shipped'}">
+                                Tracking will be available once shipped</h4>
+                            <p th:if="${order.status.name() != 'DELIVERED'}" class="text-muted">Estimated Delivery:
+                                <span class="fw-bold"
+                                    th:text="${order.expectedDeliveryDate != null ? #temporals.format(order.expectedDeliveryDate, 'MMM dd, yyyy') : 'Calculating...'}">Jan
+                                    29, 2026</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-card p-4">
+                    <h5 class="detail-title">Order Items</h5>
+                    <div th:each="item : ${order.items}" class="order-item-card">
+                        <img th:src="${item.product.image}" class="order-item-img shadow-sm">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-bold" th:text="${item.product.name}">Nike Air Jordan</h6>
+                            <p class="mb-0 text-muted small">Qty: <span th:text="${item.quantity}">1</span> | Size:
+                                <span th:text="${item.size != null ? item.size : 'M'}">8</span>
+                            </p>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-bold" th:text="'₹ ' + ${item.product.price * item.quantity}">₹ 2,499</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">Total Amount Paid</h6>
+                        <h4 class="mb-0 fw-bold text-success" th:text="'₹ ' + ${order.totalAmount}">₹ 2,499</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="tracking-card p-4">
+                    <h5 class="detail-title">Shipping Details</h5>
+                    <div class="d-flex mb-3">
+                        <i class="bi bi-geo-alt-fill text-danger me-2"></i>
+                        <div>
+                            <p class="mb-1 fw-bold">Delivery Address</p>
+                            <p class="mb-0 text-muted small" th:text="${order.user.address}">123 Street, Tamilnadu,
+                                India</p>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <i class="bi bi-person-fill text-primary me-2"></i>
+                        <div>
+                            <p class="mb-1 fw-bold">Customer</p>
+                            <p class="mb-0 text-muted small" th:text="${order.user.name}">John Doe</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-card p-4 bg-light border">
+                    <h5 class="detail-title">Need Help?</h5>
+                    <p class="small text-muted mb-4">If you have any questions about your order, please contact our
+                        support team.</p>
+                    <a th:href="@{/contact}" class="btn btn-dark w-100 py-2">Contact Support</a>
+                    <a th:href="@{/orders}" class="btn btn-outline-dark w-100 py-2 mt-2">Back to Orders</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var orderId = /*[[${order.id}]]*/ 0;
+        var status = /*[[${order.status}]]*/ 'PENDING';
+        var initialLat = /*[[${order.currentLatitude}]]*/ 28.6139;
+        var initialLng = /*[[${order.currentLongitude}]]*/ 77.2090;
+
+        if (status === 'OUT_FOR_DELIVERY') {
+            var map = L.map('map', { zoomControl: false }).setView([initialLat || 28.6139, initialLng || 77.2090], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(map);
+
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            var deliveryIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/1048/1048329.png',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+
+            var marker = L.marker([initialLat || 28.6139, initialLng || 77.2090], { icon: deliveryIcon }).addTo(map);
+            marker.bindPopup("<div class='text-center'><b>StepUp Delivery</b><br>On the way to you!</div>").openPopup();
+
+            // Simulating movement if lat/lng are missing for demo
+            if (!initialLat && status === 'OUT_FOR_DELIVERY') {
+                // Just for Demo purpose if DB is empty
+                console.log("No lat/lng found, demo coordinates used.");
+            }
+
+            setInterval(function () {
+                fetch('/api/tracking/' + orderId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.lat && data.lng) {
+                            var newLatLng = new L.LatLng(data.lat, data.lng);
+                            marker.setLatLng(newLatLng);
+                            map.panTo(newLatLng);
+                        }
+                    });
+            }, 5000);
+        }
+        /*]]>*/
+    </script>
+</body>
+
+</html>
